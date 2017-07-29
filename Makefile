@@ -1,6 +1,14 @@
-CFLAGS = -std=c99 -O2 -Wall -Wextra -Igl3w/
+CFLAGS = -std=c99 -O2 -Wall -Wextra -Igl3w/ -Isrc/
 LDLIBS = -lglfw -lGL -ldl
+NAME = segno
 
-all:
-	gcc gl3w/gl3w.c src/main.c $(CFLAGS)  $(LDLIBS) -o glowing
-	./glowing
+test: $(NAME)
+	./$(NAME)
+
+clean:
+	rm ./$(NAME)
+	rm obj/*
+
+$(NAME):
+	gcc gl3w/gl3w.c src/*.c $(CFLAGS)  $(LDLIBS) -o $(NAME)
+
