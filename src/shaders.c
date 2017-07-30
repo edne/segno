@@ -35,3 +35,17 @@ link_program(GLuint vert, GLuint frag)
     }
     return program;
 }
+
+
+GLuint
+make_program(const GLchar *vert_shader, const GLchar *frag_shader)
+{
+    GLuint vert = compile_shader(GL_VERTEX_SHADER, vert_shader);
+    GLuint frag = compile_shader(GL_FRAGMENT_SHADER, frag_shader);
+    GLuint program = link_program(vert, frag);
+
+    glDeleteShader(frag);
+    glDeleteShader(vert);
+
+    return program;
+}

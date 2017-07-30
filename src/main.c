@@ -1,50 +1,20 @@
 #include <segno.h>
 
-struct graphics_context {
-    GLFWwindow *window;
-    GLuint program;
-    GLint uniform_angle;
-    GLuint vbo_point;
-    GLuint vao_point;
-    double angle;
-    long framecount;
-    double lastframe;
-};
-
-const float SQUARE[] = {
-    -1.0f,  1.0f,
-    -1.0f, -1.0f,
-     1.0f,  1.0f,
-     1.0f, -1.0f
-};
-
-static void
-render(struct graphics_context *context)
+GLFWwindow *
+make_window(int w, int h, const char *title)
 {
-    glClearColor(0.15, 0.15, 0.15, 1);
-    glClear(GL_COLOR_BUFFER_BIT);
+    GLFWwindow *window = glfwCreateWindow(w, h, title, NULL, NULL);
 
-    glUseProgram(context->program);
-    glUniform1f(context->uniform_angle, context->angle);
-    glBindVertexArray(context->vao_point);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, countof(SQUARE) / 2);
-    glBindVertexArray(0);
-    glUseProgram(0);
+    glfwMakeContextCurrent(window);
+    glfwSwapInterval(1);  // vsync
 
-    /* Physics */
-    double now = glfwGetTime();
-    double udiff = now - context->lastframe;
-    context->angle += 1.0 * udiff;
-    if (context->angle > 2 * M_PI)
-        context->angle -= 2 * M_PI;
-    context->framecount++;
-    if ((long)now != (long)context->lastframe) {
-        printf("FPS: %ld\n", context->framecount);
-        context->framecount = 0;
+    // TODO: if multiple windows use a static flag to call this just once
+    if (gl3wInit()) {
+        fprintf(stderr, "gl3w: failed to initialize\n");
+        exit(EXIT_FAILURE);
     }
-    context->lastframe = now;
 
-    glfwSwapBuffers(context->window);
+    return window;
 }
 
 static void
@@ -57,52 +27,21 @@ key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
 }
 
 int
-main(int argc, char **argv)
+main()
 {
-    /* Options */
-    bool fullscreen = false;
-    const char *title = "OpenGL 3.3 Demo";
-
-    int opt;
-    while ((opt = getopt(argc, argv, "f")) != -1) {
-        switch (opt) {
-            case 'f':
-                fullscreen = true;
-                break;
-            default:
-                exit(EXIT_FAILURE);
-        }
-    }
-
-    /* Create window and OpenGL context */
-    struct graphics_context context;
     if (!glfwInit()) {
         fprintf(stderr, "GLFW3: failed to initialize\n");
         exit(EXIT_FAILURE);
     }
+
     glfwWindowHint(GLFW_SAMPLES, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    if (fullscreen) {
-        GLFWmonitor *monitor = glfwGetPrimaryMonitor();
-        const GLFWvidmode *m = glfwGetVideoMode(monitor);
-        context.window =
-            glfwCreateWindow(m->width, m->height, title, monitor, NULL);
-    } else {
-        context.window =
-            glfwCreateWindow(640, 640, title, NULL, NULL);
-    }
-    glfwMakeContextCurrent(context.window);
-    glfwSwapInterval(1);
 
-    /* Initialize gl3w */
-    if (gl3wInit()) {
-        fprintf(stderr, "gl3w: failed to initialize\n");
-        exit(EXIT_FAILURE);
-    }
+    GLFWwindow *window = make_window(640, 640, "OpenGL 3.3 Demo");
 
     /* Shader sources */
     const GLchar *vert_shader =
@@ -121,43 +60,63 @@ main(int argc, char **argv)
         "    color = vec4(1, 0.15, 0.15, 0);\n"
         "}\n";
 
-    /* Compile and link OpenGL program */
-    GLuint vert = compile_shader(GL_VERTEX_SHADER, vert_shader);
-    GLuint frag = compile_shader(GL_FRAGMENT_SHADER, frag_shader);
-    context.program = link_program(vert, frag);
-    context.uniform_angle = glGetUniformLocation(context.program, "angle");
-    glDeleteShader(frag);
-    glDeleteShader(vert);
+    GLuint program = make_program(vert_shader, frag_shader);
 
-    /* Prepare vertex buffer object (VBO) */
-    glGenBuffers(1, &context.vbo_point);
-    glBindBuffer(GL_ARRAY_BUFFER, context.vbo_point);
+    GLint uniform_angle = glGetUniformLocation(program, "angle");
+
+
+    const float SQUARE[] = {
+        -1.0f,  1.0f,
+        -1.0f, -1.0f,
+         1.0f,  1.0f,
+         1.0f, -1.0f
+    };
+
+    GLuint vbo_point;
+    GLuint vao_point;
+
+    glGenBuffers(1, &vbo_point);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_point);
     glBufferData(GL_ARRAY_BUFFER, sizeof(SQUARE), SQUARE, GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    /* Prepare vertrex array object (VAO) */
-    glGenVertexArrays(1, &context.vao_point);
-    glBindVertexArray(context.vao_point);
-    glBindBuffer(GL_ARRAY_BUFFER, context.vbo_point);
+    glGenVertexArrays(1, &vao_point);
+    glBindVertexArray(vao_point);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_point);
     glVertexAttribPointer(ATTRIB_POINT, 2, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(ATTRIB_POINT);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
+
     /* Start main loop */
-    glfwSetKeyCallback(context.window, key_callback);
-    context.lastframe = glfwGetTime();
-    context.framecount = 0;
-    while (!glfwWindowShouldClose(context.window)) {
-        render(&context);
+    glfwSetKeyCallback(window, key_callback);
+    while (!glfwWindowShouldClose(window)) {
+        glClearColor(0.15, 0.15, 0.15, 1);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        double now = glfwGetTime();
+        double angle = fmod(now, 2*M_PI);
+
+        glUseProgram(program);
+
+        glUniform1f(uniform_angle, angle);
+
+        glBindVertexArray(vao_point);
+        glDrawArrays(GL_TRIANGLE_STRIP, 0, countof(SQUARE) / 2);
+        glBindVertexArray(0);
+
+        glUseProgram(0);
+
+        glfwSwapBuffers(window);
         glfwPollEvents();
     }
     fprintf(stderr, "Exiting ...\n");
 
     /* Cleanup and exit */
-    glDeleteVertexArrays(1, &context.vao_point);
-    glDeleteBuffers(1, &context.vbo_point);
-    glDeleteProgram(context.program);
+    glDeleteVertexArrays(1, &vao_point);
+    glDeleteBuffers(1, &vbo_point);
+    glDeleteProgram(program);
 
     glfwTerminate();
     return 0;

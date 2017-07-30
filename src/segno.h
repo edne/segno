@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <getopt.h>
+#include <math.h>
 
 #define GLFW_INCLUDE_NONE
 #include <GL/gl3w.h>
@@ -17,4 +18,4 @@ GLuint
 compile_shader(GLenum type, const GLchar *source);
 
 GLuint
-link_program(GLuint vert, GLuint frag);
+make_program(const GLchar *vert_shader, const GLchar *frag_shader);
