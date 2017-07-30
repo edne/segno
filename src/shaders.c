@@ -1,8 +1,7 @@
 #include <segno.h>
 
 GLuint
-compile_shader(GLenum type, const GLchar *source)
-{
+compile_shader(GLenum type, const GLchar *source) {
     GLuint shader = glCreateShader(type);
     glShaderSource(shader, 1, &source, NULL);
     glCompileShader(shader);
@@ -19,8 +18,7 @@ compile_shader(GLenum type, const GLchar *source)
 }
 
 GLuint
-link_program(GLuint vert, GLuint frag)
-{
+link_program(GLuint vert, GLuint frag) {
     GLuint program = glCreateProgram();
     glAttachShader(program, vert);
     glAttachShader(program, frag);
@@ -38,8 +36,7 @@ link_program(GLuint vert, GLuint frag)
 
 
 GLuint
-make_program(const GLchar *vert_shader, const GLchar *frag_shader)
-{
+make_program(const GLchar *vert_shader, const GLchar *frag_shader) {
     GLuint vert = compile_shader(GL_VERTEX_SHADER, vert_shader);
     GLuint frag = compile_shader(GL_FRAGMENT_SHADER, frag_shader);
     GLuint program = link_program(vert, frag);

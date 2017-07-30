@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <getopt.h>
 #include <math.h>
 
 #define GLFW_INCLUDE_NONE

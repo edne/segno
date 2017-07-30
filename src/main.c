@@ -1,8 +1,78 @@
 #include <segno.h>
 
+typedef struct {
+    int n;
+    GLuint vertex_buffer;
+    GLuint vertex_array;
+} Shape;
+
+
+Shape
+make_polygon(int n) {
+    // Points
+    float array[2*n];
+
+    int i;
+    float theta;
+    for (i=0; i<n; i++) {
+        theta = i * 2*M_PI / n;
+
+        array[i*2] = cos(theta);
+        array[i*2 + 1] = sin(theta);
+    }
+    //
+
+    // OpenGL stuff
+    GLuint vbo_point;
+    GLuint vao_point;
+
+    glGenBuffers(1, &vbo_point);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_point);
+    glBufferData(GL_ARRAY_BUFFER, n*2*sizeof(float), array, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glGenVertexArrays(1, &vao_point);
+    glBindVertexArray(vao_point);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_point);
+    glVertexAttribPointer(ATTRIB_POINT, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(ATTRIB_POINT);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glBindVertexArray(0);
+    //
+
+    // Polygon
+    Shape p;
+    p.n = n;
+    p.vertex_buffer = vbo_point;
+    p.vertex_array = vao_point;
+
+    return p;
+}
+
+void
+draw_shape_fill(Shape s) {
+    glBindVertexArray(s.vertex_array);
+    glDrawArrays(GL_TRIANGLE_FAN, 0, s.n);
+    glBindVertexArray(0);
+}
+
+void
+draw_shape_stroke(Shape s) {
+    glBindVertexArray(s.vertex_array);
+    glDrawArrays(GL_LINE_LOOP, 0, s.n);
+    glBindVertexArray(0);
+}
+
+void
+free_shape(Shape s) {
+    glDeleteVertexArrays(1, &s.vertex_buffer);
+    glDeleteBuffers(1, &s.vertex_array);
+}
+
 GLFWwindow *
-make_window(int w, int h, const char *title)
-{
+make_window(int w, int h, const char *title) {
     GLFWwindow *window = glfwCreateWindow(w, h, title, NULL, NULL);
 
     glfwMakeContextCurrent(window);
@@ -18,17 +88,16 @@ make_window(int w, int h, const char *title)
 }
 
 static void
-key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
-{
+key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
     (void) scancode;
     (void) mods;
-    if (key == GLFW_KEY_Q && action == GLFW_PRESS)
+    if (key == GLFW_KEY_Q && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GL_TRUE);
+    }
 }
 
 int
-main()
-{
+main() {
     if (!glfwInit()) {
         fprintf(stderr, "GLFW3: failed to initialize\n");
         exit(EXIT_FAILURE);
@@ -57,42 +126,19 @@ main()
         "#version 330\n"
         "out vec4 color;\n"
         "void main() {\n"
-        "    color = vec4(1, 0.15, 0.15, 0);\n"
+        "    color = vec4(0.9, 0.9, 0.9, 0);\n"
         "}\n";
 
     GLuint program = make_program(vert_shader, frag_shader);
 
     GLint uniform_angle = glGetUniformLocation(program, "angle");
 
-
-    const float SQUARE[] = {
-        -1.0f,  1.0f,
-        -1.0f, -1.0f,
-         1.0f,  1.0f,
-         1.0f, -1.0f
-    };
-
-    GLuint vbo_point;
-    GLuint vao_point;
-
-    glGenBuffers(1, &vbo_point);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_point);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(SQUARE), SQUARE, GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    glGenVertexArrays(1, &vao_point);
-    glBindVertexArray(vao_point);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_point);
-    glVertexAttribPointer(ATTRIB_POINT, 2, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(ATTRIB_POINT);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-
+    Shape polygon = make_polygon(6);
 
     /* Start main loop */
     glfwSetKeyCallback(window, key_callback);
     while (!glfwWindowShouldClose(window)) {
-        glClearColor(0.15, 0.15, 0.15, 1);
+        glClearColor(0.1, 0.1, 0.1, 1);
         glClear(GL_COLOR_BUFFER_BIT);
 
         double now = glfwGetTime();
@@ -102,9 +148,7 @@ main()
 
         glUniform1f(uniform_angle, angle);
 
-        glBindVertexArray(vao_point);
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, countof(SQUARE) / 2);
-        glBindVertexArray(0);
+        draw_shape_stroke(polygon);
 
         glUseProgram(0);
 
@@ -114,8 +158,7 @@ main()
     fprintf(stderr, "Exiting ...\n");
 
     /* Cleanup and exit */
-    glDeleteVertexArrays(1, &vao_point);
-    glDeleteBuffers(1, &vbo_point);
+    free_shape(polygon);
     glDeleteProgram(program);
 
     glfwTerminate();
