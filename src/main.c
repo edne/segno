@@ -1,5 +1,6 @@
 #include <segno.h>
 
+
 typedef struct {
     int n;
     GLuint vertex_buffer;
@@ -8,25 +9,18 @@ typedef struct {
 } Shape;
 
 
-void
-identity(GLfloat matrix[16]) {
+Shape scale(Shape s, float x) {
     int i, j;
-    for(i=0; i<4; i++)
-    for(j=0; j<4; j++)
-        matrix[i*4 + j] = (i==j) ? 1 : 0;
-}
 
-void
-scale(float factor, GLfloat matrix[16]) {
-    int i, j;
     for(i=0; i<3; i++)
     for(j=0; j<3; j++)
-        matrix[i*4 + j] *= factor;
+        s.matrix[i*4 + j] *= x;
+
+    return s;
 }
 
 
-Shape
-make_polygon(int n) {
+Shape make_polygon(int n) {
     // Points
     float array[2*n];
 
@@ -66,34 +60,32 @@ make_polygon(int n) {
     p.vertex_buffer = vbo_point;
     p.vertex_array = vao_point;
 
-    identity(p.matrix);
-    scale(0.5, p.matrix);
+    int j;
+    for(i=0; i<4; i++)
+    for(j=0; j<4; j++)
+        p.matrix[i*4 + j] = (i==j) ? 1 : 0;
 
     return p;
 }
 
-void
-draw_shape_fill(Shape s) {
+void draw_shape_fill(Shape s) {
     glBindVertexArray(s.vertex_array);
     glDrawArrays(GL_TRIANGLE_FAN, 0, s.n);
     glBindVertexArray(0);
 }
 
-void
-draw_shape_stroke(Shape s) {
+void draw_shape_stroke(Shape s) {
     glBindVertexArray(s.vertex_array);
     glDrawArrays(GL_LINE_LOOP, 0, s.n);
     glBindVertexArray(0);
 }
 
-void
-free_shape(Shape s) {
+void free_shape(Shape s) {
     glDeleteVertexArrays(1, &s.vertex_buffer);
     glDeleteBuffers(1, &s.vertex_array);
 }
 
-GLFWwindow *
-make_window(int w, int h, const char *title) {
+GLFWwindow *make_window(int w, int h, const char *title) {
     GLFWwindow *window = glfwCreateWindow(w, h, title, NULL, NULL);
 
     glfwMakeContextCurrent(window);
@@ -108,8 +100,7 @@ make_window(int w, int h, const char *title) {
     return window;
 }
 
-static void
-key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
+static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
     (void) scancode;
     (void) mods;
     if (key == GLFW_KEY_Q && action == GLFW_PRESS) {
@@ -117,8 +108,7 @@ key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
     }
 }
 
-int
-main() {
+int main() {
     if (!glfwInit()) {
         fprintf(stderr, "GLFW3: failed to initialize\n");
         exit(EXIT_FAILURE);
@@ -137,11 +127,8 @@ main() {
     const GLchar *vert_shader =
         "#version 330\n"
         "layout(location = 0) in vec2 point;\n"
-        "uniform float angle;\n"
         "uniform mat4 matrix;\n"
         "void main() {\n"
-        "    mat2 rotate = mat2(cos(angle), -sin(angle),\n"
-        "                       sin(angle), cos(angle));\n"
         "    gl_Position = matrix * vec4(point, 0.0, 1.0);\n"
         "}\n";
     const GLchar *frag_shader =
@@ -153,10 +140,10 @@ main() {
 
     GLuint program = make_program(vert_shader, frag_shader);
 
-    GLint uniform_angle = glGetUniformLocation(program, "angle");
     GLint uniform_matrix = glGetUniformLocation(program, "matrix");
 
     Shape polygon = make_polygon(6);
+    polygon = scale(polygon, 0.5);
 
     /* Start main loop */
     glfwSetKeyCallback(window, key_callback);
@@ -164,12 +151,8 @@ main() {
         glClearColor(0.1, 0.1, 0.1, 1);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        double now = glfwGetTime();
-        double angle = fmod(now, 2*M_PI);
-
         glUseProgram(program);
 
-        glUniform1f(uniform_angle, angle);
         glUniformMatrix4fv(uniform_matrix, 1, GL_FALSE, polygon.matrix);
 
         draw_shape_stroke(polygon);
