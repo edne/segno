@@ -4,7 +4,25 @@ typedef struct {
     int n;
     GLuint vertex_buffer;
     GLuint vertex_array;
+    GLfloat matrix[16];
 } Shape;
+
+
+void
+identity(GLfloat matrix[16]) {
+    int i, j;
+    for(i=0; i<4; i++)
+    for(j=0; j<4; j++)
+        matrix[i*4 + j] = (i==j) ? 1 : 0;
+}
+
+void
+scale(float factor, GLfloat matrix[16]) {
+    int i, j;
+    for(i=0; i<3; i++)
+    for(j=0; j<3; j++)
+        matrix[i*4 + j] *= factor;
+}
 
 
 Shape
@@ -15,7 +33,7 @@ make_polygon(int n) {
     int i;
     float theta;
     for (i=0; i<n; i++) {
-        theta = i * 2*M_PI / n;
+        theta = i * 2*M_PI / n - M_PI/2;
 
         array[i*2] = cos(theta);
         array[i*2 + 1] = sin(theta);
@@ -47,6 +65,9 @@ make_polygon(int n) {
     p.n = n;
     p.vertex_buffer = vbo_point;
     p.vertex_array = vao_point;
+
+    identity(p.matrix);
+    scale(0.5, p.matrix);
 
     return p;
 }
@@ -117,10 +138,11 @@ main() {
         "#version 330\n"
         "layout(location = 0) in vec2 point;\n"
         "uniform float angle;\n"
+        "uniform mat4 matrix;\n"
         "void main() {\n"
         "    mat2 rotate = mat2(cos(angle), -sin(angle),\n"
         "                       sin(angle), cos(angle));\n"
-        "    gl_Position = vec4(0.75 * rotate * point, 0.0, 1.0);\n"
+        "    gl_Position = matrix * vec4(point, 0.0, 1.0);\n"
         "}\n";
     const GLchar *frag_shader =
         "#version 330\n"
@@ -132,6 +154,7 @@ main() {
     GLuint program = make_program(vert_shader, frag_shader);
 
     GLint uniform_angle = glGetUniformLocation(program, "angle");
+    GLint uniform_matrix = glGetUniformLocation(program, "matrix");
 
     Shape polygon = make_polygon(6);
 
@@ -147,6 +170,7 @@ main() {
         glUseProgram(program);
 
         glUniform1f(uniform_angle, angle);
+        glUniformMatrix4fv(uniform_matrix, 1, GL_FALSE, polygon.matrix);
 
         draw_shape_stroke(polygon);
 
