@@ -1,7 +1,6 @@
 #include <segno.h>
 
-GLuint
-compile_shader(GLenum type, const GLchar *source) {
+GLuint compile_shader(GLenum type, const GLchar *source) {
     GLuint shader = glCreateShader(type);
     glShaderSource(shader, 1, &source, NULL);
     glCompileShader(shader);
@@ -17,8 +16,7 @@ compile_shader(GLenum type, const GLchar *source) {
     return shader;
 }
 
-GLuint
-link_program(GLuint vert, GLuint frag) {
+GLuint link_program(GLuint vert, GLuint frag) {
     GLuint program = glCreateProgram();
     glAttachShader(program, vert);
     glAttachShader(program, frag);
@@ -35,14 +33,22 @@ link_program(GLuint vert, GLuint frag) {
 }
 
 
-GLuint
-make_program(const GLchar *vert_shader, const GLchar *frag_shader) {
+Program make_program(const GLchar *vert_shader, const GLchar *frag_shader) {
+    Program program;
+
     GLuint vert = compile_shader(GL_VERTEX_SHADER, vert_shader);
     GLuint frag = compile_shader(GL_FRAGMENT_SHADER, frag_shader);
-    GLuint program = link_program(vert, frag);
+
+    program.id = link_program(vert, frag);
 
     glDeleteShader(frag);
     glDeleteShader(vert);
 
+    program.uniform_matrix = glGetUniformLocation(program.id, "matrix");
+
     return program;
+}
+
+void free_program(Program program) {
+    glDeleteProgram(program.id);
 }

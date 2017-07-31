@@ -1,22 +1,29 @@
 #include <segno.h>
 
 
-typedef struct {
-    int n;
-    GLuint vertex_buffer;
-    GLuint vertex_array;
-    GLfloat matrix[16];
-} Shape;
+Shape shape_scale(Shape shape, float factor) {
+    Shape out = shape;  // make a copy
+    double v[] = {factor, factor, factor};
+
+    mat4_scale(shape.matrix, v, out.matrix);
+    return out;
+}
 
 
-Shape scale(Shape s, float x) {
-    int i, j;
+Shape shape_rotate(Shape shape, float angle) {
+    Shape out = shape;  // make a copy
 
-    for(i=0; i<3; i++)
-    for(j=0; j<3; j++)
-        s.matrix[i*4 + j] *= x;
+    mat4_rotateZ(shape.matrix, angle, out.matrix);
+    return out;
+}
 
-    return s;
+
+Shape shape_translate(Shape shape, float x, float y, float z) {
+    Shape out = shape;  // make a copy
+    double v[] = {x, y, z};
+
+    mat4_translate(shape.matrix, v, out.matrix);
+    return out;
 }
 
 
@@ -27,7 +34,7 @@ Shape make_polygon(int n) {
     int i;
     float theta;
     for (i=0; i<n; i++) {
-        theta = i * 2*M_PI / n - M_PI/2;
+        theta = i * 2*M_PI / n + M_PI/2;
 
         array[i*2] = cos(theta);
         array[i*2 + 1] = sin(theta);
@@ -47,42 +54,46 @@ Shape make_polygon(int n) {
     glBindVertexArray(vao_point);
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo_point);
-    glVertexAttribPointer(ATTRIB_POINT, 2, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(ATTRIB_POINT);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glBindVertexArray(0);
     //
 
     // Polygon
-    Shape p;
-    p.n = n;
-    p.vertex_buffer = vbo_point;
-    p.vertex_array = vao_point;
+    Shape shape;
+    shape.n = n;
+    shape.vertex_buffer = vbo_point;
+    shape.vertex_array = vao_point;
 
-    int j;
-    for(i=0; i<4; i++)
-    for(j=0; j<4; j++)
-        p.matrix[i*4 + j] = (i==j) ? 1 : 0;
+    mat4_identity(shape.matrix);
 
-    return p;
+    return shape;
 }
 
-void draw_shape_fill(Shape s) {
-    glBindVertexArray(s.vertex_array);
-    glDrawArrays(GL_TRIANGLE_FAN, 0, s.n);
+
+void shape_draw(Shape shape, Program program) {
+    glUseProgram(program.id);
+
+    // cast to GLfloat array
+    GLfloat matrix[16];
+    for(int i=0; i<16; i++)
+        matrix[i] = shape.matrix[i];
+
+    glUniformMatrix4fv(program.uniform_matrix, 1, GL_FALSE, matrix);
+
+    glBindVertexArray(shape.vertex_array);
+    glDrawArrays(GL_LINE_LOOP, 0, shape.n);
+    //glDrawArrays(GL_TRIANGLE_FAN, 0, shape.n);
+
     glBindVertexArray(0);
+    glUseProgram(0);
 }
 
-void draw_shape_stroke(Shape s) {
-    glBindVertexArray(s.vertex_array);
-    glDrawArrays(GL_LINE_LOOP, 0, s.n);
-    glBindVertexArray(0);
-}
-
-void free_shape(Shape s) {
-    glDeleteVertexArrays(1, &s.vertex_buffer);
-    glDeleteBuffers(1, &s.vertex_array);
+void shape_free(Shape shape) {
+    glDeleteVertexArrays(1, &shape.vertex_buffer);
+    glDeleteBuffers(1, &shape.vertex_array);
 }
 
 GLFWwindow *make_window(int w, int h, const char *title) {
@@ -100,7 +111,8 @@ GLFWwindow *make_window(int w, int h, const char *title) {
     return window;
 }
 
-static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
+static void key_callback(GLFWwindow *window,
+                         int key, int scancode, int action, int mods) {
     (void) scancode;
     (void) mods;
     if (key == GLFW_KEY_Q && action == GLFW_PRESS) {
@@ -138,35 +150,27 @@ int main() {
         "    color = vec4(0.9, 0.9, 0.9, 0);\n"
         "}\n";
 
-    GLuint program = make_program(vert_shader, frag_shader);
+    Program program = make_program(vert_shader, frag_shader);
 
-    GLint uniform_matrix = glGetUniformLocation(program, "matrix");
+    Shape polygon = make_polygon(3);
+    polygon = shape_scale(polygon, 0.5);
+    //polygon = shape_rotate(polygon, M_PI/8);
+    polygon = shape_translate(polygon, 0.5, 0, 0);
 
-    Shape polygon = make_polygon(6);
-    polygon = scale(polygon, 0.5);
-
-    /* Start main loop */
     glfwSetKeyCallback(window, key_callback);
     while (!glfwWindowShouldClose(window)) {
         glClearColor(0.1, 0.1, 0.1, 1);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glUseProgram(program);
-
-        glUniformMatrix4fv(uniform_matrix, 1, GL_FALSE, polygon.matrix);
-
-        draw_shape_stroke(polygon);
-
-        glUseProgram(0);
+        shape_draw(polygon, program);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
     fprintf(stderr, "Exiting ...\n");
 
-    /* Cleanup and exit */
-    free_shape(polygon);
-    glDeleteProgram(program);
+    shape_free(polygon);
+    free_program(program);
 
     glfwTerminate();
     return 0;

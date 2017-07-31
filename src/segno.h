@@ -1,20 +1,29 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
-#include <stdbool.h>
 #include <math.h>
 
-#define GLFW_INCLUDE_NONE
 #include <GL/gl3w.h>
 #include <GLFW/glfw3.h>
 
-#define countof(x) (sizeof(x) / sizeof(0[x]))
+#include <gl-matrix.h>
 
 #define M_PI 3.141592653589793
-#define ATTRIB_POINT 0
 
-GLuint
-compile_shader(GLenum type, const GLchar *source);
 
-GLuint
-make_program(const GLchar *vert_shader, const GLchar *frag_shader);
+typedef struct {
+    int n;
+    GLuint vertex_buffer;
+    GLuint vertex_array;
+    double matrix[16];  // NOT mat4_t because I want it on the stack
+} Shape;
+
+
+typedef struct {
+    GLuint id;
+    GLuint uniform_matrix;
+} Program;
+
+
+Program make_program(const GLchar *vert_shader,
+                     const GLchar *frag_shader);
+void free_program(Program program);
