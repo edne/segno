@@ -27,7 +27,7 @@ Shape shape_translate(Shape shape, float x, float y, float z) {
 }
 
 
-Shape make_polygon(int n) {
+Shape polygon_new(int n) {
     // Points
     float array[2*n];
 
@@ -96,7 +96,7 @@ void shape_free(Shape shape) {
     glDeleteBuffers(1, &shape.vertex_array);
 }
 
-GLFWwindow *make_window(int w, int h, const char *title) {
+GLFWwindow *window_new(int w, int h, const char *title) {
     GLFWwindow *window = glfwCreateWindow(w, h, title, NULL, NULL);
 
     glfwMakeContextCurrent(window);
@@ -120,7 +120,7 @@ static void key_callback(GLFWwindow *window,
     }
 }
 
-int main() {
+Context gl_init() {
     if (!glfwInit()) {
         fprintf(stderr, "GLFW3: failed to initialize\n");
         exit(EXIT_FAILURE);
@@ -132,8 +132,6 @@ int main() {
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-    GLFWwindow *window = make_window(640, 640, "OpenGL 3.3 Demo");
 
     /* Shader sources */
     const GLchar *vert_shader =
@@ -150,28 +148,42 @@ int main() {
         "    color = vec4(0.9, 0.9, 0.9, 0);\n"
         "}\n";
 
-    Program program = make_program(vert_shader, frag_shader);
+    Context context;
+    context.window = window_new(640, 640, "OpenGL 3.3 Demo");
+    context.program = program_new(vert_shader, frag_shader);
 
-    Shape polygon = make_polygon(3);
-    polygon = shape_scale(polygon, 0.5);
+    return context;
+}
+
+void gl_clean(Context context) {
+    program_free(context.program);
+    glfwTerminate();
+}
+
+void gl_loop(Context context) {
+    Shape polygon = polygon_new(6);
+    polygon = shape_scale(polygon, 0.75);
     //polygon = shape_rotate(polygon, M_PI/8);
-    polygon = shape_translate(polygon, 0.5, 0, 0);
+    //polygon = shape_translate(polygon, 0.5, 0, 0);
 
-    glfwSetKeyCallback(window, key_callback);
-    while (!glfwWindowShouldClose(window)) {
+    glfwSetKeyCallback(context.window, key_callback);
+    while (!glfwWindowShouldClose(context.window)) {
         glClearColor(0.1, 0.1, 0.1, 1);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        shape_draw(polygon, program);
+        shape_draw(polygon, context.program);
 
-        glfwSwapBuffers(window);
+        glfwSwapBuffers(context.window);
         glfwPollEvents();
     }
-    fprintf(stderr, "Exiting ...\n");
 
     shape_free(polygon);
-    free_program(program);
+}
 
-    glfwTerminate();
+int main() {
+    Context context = gl_init();
+
+    gl_loop(context);
+    gl_clean(context);
     return 0;
 }

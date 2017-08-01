@@ -33,7 +33,7 @@ GLuint link_program(GLuint vert, GLuint frag) {
 }
 
 
-Program make_program(const GLchar *vert_shader, const GLchar *frag_shader) {
+Program program_new(const GLchar *vert_shader, const GLchar *frag_shader) {
     Program program;
 
     GLuint vert = compile_shader(GL_VERTEX_SHADER, vert_shader);
@@ -49,6 +49,6 @@ Program make_program(const GLchar *vert_shader, const GLchar *frag_shader) {
     return program;
 }
 
-void free_program(Program program) {
+void program_free(Program program) {
     glDeleteProgram(program.id);
 }

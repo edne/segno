@@ -24,6 +24,12 @@ typedef struct {
 } Program;
 
 
-Program make_program(const GLchar *vert_shader,
+typedef struct {
+    Program program;
+    GLFWwindow *window;
+} Context;
+
+
+Program program_new(const GLchar *vert_shader,
                      const GLchar *frag_shader);
-void free_program(Program program);
+void program_free(Program program);
