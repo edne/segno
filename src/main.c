@@ -180,7 +180,30 @@ void gl_loop(Context context) {
     shape_free(polygon);
 }
 
+SCM hello_world() {
+  printf("Hello World!\n");
+  return SCM_UNSPECIFIED;
+}
+
+static void *guile_main(void *v) {
+    (void) v;
+
+    scm_init_guile();
+    scm_c_define_gsubr("hello-world", 0, 0, 0, &hello_world);
+
+    scm_c_eval_string("(use-modules (ice-9 readline))");
+    scm_c_eval_string("(activate-readline)");
+
+    scm_c_eval_string("(hello-world)");
+
+    scm_shell(0, NULL);
+    return NULL;
+}
+
 int main() {
+    pthread_t thread_id;
+    pthread_create(&thread_id, NULL, guile_main, 0);
+
     Context context = gl_init();
 
     gl_loop(context);

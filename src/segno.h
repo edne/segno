@@ -1,10 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <pthread.h>
 
 #include <GL/gl3w.h>
 #include <GLFW/glfw3.h>
-
+#include <libguile.h>
 #include <gl-matrix.h>
 
 #define M_PI 3.141592653589793
