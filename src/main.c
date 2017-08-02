@@ -171,7 +171,13 @@ void gl_loop(Context context) {
         glClearColor(0.1, 0.1, 0.1, 1);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        shape_draw(polygon, context.program);
+        SCM guile_polygon;
+        Shape *polygon_ref;
+
+        guile_polygon = scm_c_eval_string("global-polygon");
+        polygon_ref = scm_to_pointer(guile_polygon);
+
+        shape_draw(*polygon_ref, context.program);
 
         glfwSwapBuffers(context.window);
         glfwPollEvents();
@@ -180,31 +186,40 @@ void gl_loop(Context context) {
     shape_free(polygon);
 }
 
-SCM hello_world() {
-  printf("Hello World!\n");
-  return SCM_UNSPECIFIED;
+SCM guile_wrap_shape(Shape shape) {
+    Shape *shape_heap = scm_gc_malloc_pointerless(sizeof(Shape), "shape");
+
+    memcpy(shape_heap, &shape, sizeof(Shape));
+
+    return scm_from_pointer(shape_heap, NULL);
 }
 
-static void *guile_main(void *v) {
-    (void) v;
+SCM guile_polyogn(SCM n) {
+    Shape polygon = polygon_new(scm_to_int(n));
+    return guile_wrap_shape(polygon);
+}
 
+static void *guile_repl(void *v) {
+    (void) v;
     scm_init_guile();
-    scm_c_define_gsubr("hello-world", 0, 0, 0, &hello_world);
 
     scm_c_eval_string("(use-modules (ice-9 readline))");
     scm_c_eval_string("(activate-readline)");
-
-    scm_c_eval_string("(hello-world)");
-
     scm_shell(0, NULL);
     return NULL;
 }
 
 int main() {
+    scm_init_guile();
+
+    scm_c_define_gsubr("polygon", 1, 0, 0, &guile_polyogn);
+
     pthread_t thread_id;
-    pthread_create(&thread_id, NULL, guile_main, 0);
+    pthread_create(&thread_id, NULL, guile_repl, 0);
 
     Context context = gl_init();
+
+    scm_c_eval_string("(define global-polygon (polygon 6))");
 
     gl_loop(context);
     gl_clean(context);
