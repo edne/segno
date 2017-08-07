@@ -31,9 +31,18 @@ typedef struct {
 } Context;
 
 
+Context gl_init();
+void gl_loop(Context context);
+void gl_clean(Context context);
+
+
 Program program_new(const GLchar *vert_shader,
                     const GLchar *frag_shader);
 void program_free(Program program);
+
+
+Shape polygon_new(int n);
+void shape_draw(Shape shape, Program program);
 
 
 GLFWwindow *global_window;
