@@ -34,3 +34,6 @@ typedef struct {
 Program program_new(const GLchar *vert_shader,
                     const GLchar *frag_shader);
 void program_free(Program program);
+
+
+GLFWwindow *global_window;

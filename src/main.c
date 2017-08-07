@@ -42,6 +42,8 @@ Shape polygon_new(int n) {
     //
 
     // OpenGL stuff
+    glfwMakeContextCurrent(global_window);  // TODO: take a window as argument
+
     GLuint vbo_point;
     GLuint vao_point;
 
@@ -98,6 +100,7 @@ void shape_free(Shape shape) {
 
 GLFWwindow *window_new(int w, int h, const char *title) {
     GLFWwindow *window = glfwCreateWindow(w, h, title, NULL, NULL);
+    global_window = window;
 
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);  // vsync
@@ -174,7 +177,7 @@ void gl_loop(Context context) {
         SCM guile_polygon;
         Shape *polygon_ref;
 
-        guile_polygon = scm_c_eval_string("global-polygon");
+        guile_polygon = scm_c_eval_string("(get-root-shape)");
         polygon_ref = scm_to_pointer(guile_polygon);
 
         shape_draw(*polygon_ref, context.program);
@@ -199,7 +202,7 @@ SCM guile_polyogn(SCM n) {
     return guile_wrap_shape(polygon);
 }
 
-static void *guile_repl(void *v) {
+void *guile_repl(void *v) {
     (void) v;
     scm_init_guile();
 
@@ -212,14 +215,14 @@ static void *guile_repl(void *v) {
 int main() {
     scm_init_guile();
 
-    scm_c_define_gsubr("polygon", 1, 0, 0, &guile_polyogn);
-
     pthread_t thread_id;
-    pthread_create(&thread_id, NULL, guile_repl, 0);
+    pthread_create(&thread_id, NULL, guile_repl, NULL);
+
+    scm_c_define_gsubr("polygon", 1, 0, 0, &guile_polyogn);
 
     Context context = gl_init();
 
-    scm_c_eval_string("(define global-polygon (polygon 6))");
+    scm_c_primitive_load("init.scm");
 
     gl_loop(context);
     gl_clean(context);
