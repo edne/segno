@@ -41,11 +41,8 @@ Program program_new(const GLchar *vert_shader,
 void program_free(Program program);
 
 
-Shape polygon_new(int n);
-Shape shape_scale(Shape shape, float factor);
-Shape shape_rotate(Shape shape, float angle);
-Shape shape_translate(Shape shape, float x, float y, float z);
 void shape_draw(Shape shape, Program program);
 
+void guile_bind_primitives();
 
 GLFWwindow *global_window;

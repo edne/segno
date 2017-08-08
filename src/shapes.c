@@ -1,33 +1,54 @@
 #include <segno.h>
 
 
-Shape shape_scale(Shape shape, float factor) {
-    Shape out = shape;  // make a copy
-    double v[] = {factor, factor, factor};
+SCM scm_from_shape(Shape shape) {
+    Shape *shape_heap = scm_gc_malloc_pointerless(sizeof(Shape), "shape");
 
-    mat4_scale(shape.matrix, v, out.matrix);
-    return out;
+    memcpy(shape_heap, &shape, sizeof(Shape));
+
+    return scm_from_pointer(shape_heap, NULL);
 }
 
-
-Shape shape_rotate(Shape shape, float angle) {
-    Shape out = shape;  // make a copy
-
-    mat4_rotateZ(shape.matrix, angle, out.matrix);
-    return out;
+Shape scm_to_shape(SCM shape_scm) {
+    Shape *shape_ref = scm_to_pointer(shape_scm);
+    Shape shape = *shape_ref;
+    return shape;
 }
 
+SCM shape_rotate(SCM shape_scm, SCM angle_scm) {
+    Shape original, out;
+    out = original = scm_to_shape(shape_scm);
 
-Shape shape_translate(Shape shape, float x, float y, float z) {
-    Shape out = shape;  // make a copy
-    double v[] = {x, y, z};
+    double angle = scm_to_double(angle_scm);
 
-    mat4_translate(shape.matrix, v, out.matrix);
-    return out;
+    mat4_rotateZ(original.matrix, angle, out.matrix);
+    return scm_from_shape(out);
 }
 
+SCM shape_translate(SCM shape_scm, SCM x_scm) {
+    Shape original, out;
+    out = original = scm_to_shape(shape_scm);
 
-Shape polygon_new(int n) {
+    double x = scm_to_double(x_scm);
+    double v[] = {x, 0, 0};
+
+    mat4_translate(original.matrix, v, out.matrix);
+    return scm_from_shape(out);
+}
+
+SCM shape_scale(SCM shape_scm, SCM ratio_scm) {
+    Shape original, out;
+    out = original = scm_to_shape(shape_scm);
+
+    double ratio = scm_to_double(ratio_scm);
+    double v[] = {ratio, ratio, ratio};
+
+    mat4_scale(original.matrix, v, out.matrix);
+    return scm_from_shape(out);
+}
+
+SCM polygon_new(SCM n_scm) {
+    int n = scm_to_int(n_scm);
     // Points
     float array[2*n];
 
@@ -71,9 +92,8 @@ Shape polygon_new(int n) {
 
     mat4_identity(shape.matrix);
 
-    return shape;
+    return scm_from_shape(shape);
 }
-
 
 void shape_draw(Shape shape, Program program) {
     glUseProgram(program.id);
@@ -93,9 +113,9 @@ void shape_draw(Shape shape, Program program) {
     glUseProgram(0);
 }
 
-void shape_free(Shape shape) {
-    glDeleteVertexArrays(1, &shape.vertex_buffer);
-    glDeleteBuffers(1, &shape.vertex_array);
+void guile_bind_primitives() {
+    scm_c_define_gsubr("polygon",   1, 0, 0, &polygon_new);
+    scm_c_define_gsubr("scale",     2, 0, 0, &shape_scale);
+    scm_c_define_gsubr("rotate",    2, 0, 0, &shape_rotate);
+    scm_c_define_gsubr("translate", 2, 0, 0, &shape_translate);
 }
-
-
