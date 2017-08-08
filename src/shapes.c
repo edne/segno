@@ -15,17 +15,39 @@ Shape scm_to_shape(SCM shape_scm) {
     return shape;
 }
 
-SCM shape_rotate(SCM shape_scm, SCM angle_scm) {
+SCM map_transform(SCM (*transform)(SCM, SCM), SCM in_list, SCM value) {
+    SCM shape_scm;
+    SCM out_list = SCM_EOL;
+    SCM env = scm_interaction_environment();
+
+    while (scm_is_pair(in_list)) {
+        shape_scm = scm_eval(scm_car(in_list), env);
+
+        out_list = scm_cons(transform(shape_scm, value), out_list);
+        in_list = scm_cdr(in_list);
+    }
+    return out_list;
+}
+
+SCM shape_rotate(SCM shape_scm, SCM turns_scm) {
+    if (scm_is_pair(shape_scm)) {
+        return map_transform(shape_rotate, shape_scm, turns_scm);
+    }
+
     Shape original, out;
     out = original = scm_to_shape(shape_scm);
 
-    double angle = scm_to_double(angle_scm);
+    double turns = scm_to_double(turns_scm);
 
-    mat4_rotateZ(original.matrix, angle * 2*M_PI, out.matrix);
+    mat4_rotateZ(original.matrix, turns * 2*M_PI, out.matrix);
     return scm_from_shape(out);
 }
 
 SCM shape_translate(SCM shape_scm, SCM x_scm) {
+    if (scm_is_pair(shape_scm)) {
+        return map_transform(shape_translate, shape_scm, x_scm);
+    }
+
     Shape original, out;
     out = original = scm_to_shape(shape_scm);
 
@@ -37,6 +59,10 @@ SCM shape_translate(SCM shape_scm, SCM x_scm) {
 }
 
 SCM shape_scale(SCM shape_scm, SCM ratio_scm) {
+    if (scm_is_pair(shape_scm)) {
+        return map_transform(shape_scale, shape_scm, ratio_scm);
+    }
+
     Shape original, out;
     out = original = scm_to_shape(shape_scm);
 
