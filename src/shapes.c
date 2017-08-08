@@ -18,10 +18,9 @@ Shape scm_to_shape(SCM shape_scm) {
 SCM map_transform(SCM (*transform)(SCM, SCM), SCM in_list, SCM value) {
     SCM shape_scm;
     SCM out_list = SCM_EOL;
-    SCM env = scm_interaction_environment();
 
     while (scm_is_pair(in_list)) {
-        shape_scm = scm_eval(scm_car(in_list), env);
+        shape_scm = scm_car(in_list);
 
         out_list = scm_cons(transform(shape_scm, value), out_list);
         in_list = scm_cdr(in_list);
@@ -32,10 +31,9 @@ SCM map_transform(SCM (*transform)(SCM, SCM), SCM in_list, SCM value) {
 SCM fork_transform(SCM (*transform)(SCM, SCM), SCM shape_scm, SCM values) {
     SCM value;
     SCM out_list = SCM_EOL;
-    SCM env = scm_interaction_environment();
 
     while (scm_is_pair(values)) {
-        value = scm_eval(scm_car(values), env);
+        value = scm_car(values);
 
         out_list = scm_cons(transform(shape_scm, value), out_list);
         values = scm_cdr(values);
@@ -150,10 +148,9 @@ SCM polygon_new(SCM n_scm) {
 void shape_draw(SCM shape_scm, Program program) {
     if (scm_is_pair(shape_scm)) {
         SCM list = shape_scm;
-        SCM env = scm_interaction_environment();
 
         while (scm_is_pair(list)) {
-            shape_scm = scm_eval(scm_car(list), env);
+            shape_scm = scm_car(list);
             shape_draw(shape_scm, program);
             list = scm_cdr(list);
         }
