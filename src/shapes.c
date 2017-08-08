@@ -29,7 +29,25 @@ SCM map_transform(SCM (*transform)(SCM, SCM), SCM in_list, SCM value) {
     return out_list;
 }
 
+SCM fork_transform(SCM (*transform)(SCM, SCM), SCM shape_scm, SCM values) {
+    SCM value;
+    SCM out_list = SCM_EOL;
+    SCM env = scm_interaction_environment();
+
+    while (scm_is_pair(values)) {
+        value = scm_eval(scm_car(values), env);
+
+        out_list = scm_cons(transform(shape_scm, value), out_list);
+        values = scm_cdr(values);
+    }
+    return out_list;
+}
+
 SCM shape_rotate(SCM shape_scm, SCM turns_scm) {
+    if (scm_is_pair(turns_scm)) {
+        return fork_transform(shape_rotate, shape_scm, turns_scm);
+    }
+
     if (scm_is_pair(shape_scm)) {
         return map_transform(shape_rotate, shape_scm, turns_scm);
     }
@@ -44,6 +62,10 @@ SCM shape_rotate(SCM shape_scm, SCM turns_scm) {
 }
 
 SCM shape_translate(SCM shape_scm, SCM x_scm) {
+    if (scm_is_pair(x_scm)) {
+        return fork_transform(shape_translate, shape_scm, x_scm);
+    }
+
     if (scm_is_pair(shape_scm)) {
         return map_transform(shape_translate, shape_scm, x_scm);
     }
@@ -59,6 +81,10 @@ SCM shape_translate(SCM shape_scm, SCM x_scm) {
 }
 
 SCM shape_scale(SCM shape_scm, SCM ratio_scm) {
+    if (scm_is_pair(ratio_scm)) {
+        return fork_transform(shape_scale, shape_scm, ratio_scm);
+    }
+
     if (scm_is_pair(shape_scm)) {
         return map_transform(shape_scale, shape_scm, ratio_scm);
     }
