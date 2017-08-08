@@ -26,7 +26,7 @@ Context gl_init() {
     glfwWindowHint(GLFW_SAMPLES, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+    glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
@@ -46,7 +46,7 @@ Context gl_init() {
         "}\n";
 
     Context context;
-    context.window = window_new(640, 640, "OpenGL 3.3 Demo");
+    context.window = window_new(640, 640, "Segno");
     context.program = program_new(vert_shader, frag_shader);
 
     return context;
@@ -55,6 +55,17 @@ Context gl_init() {
 void gl_clean(Context context) {
     program_free(context.program);
     glfwTerminate();
+}
+
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+
+void size_callback(GLFWwindow* window, int width, int height) {
+    (void) window;
+    int side = MIN(width, height);
+    int x0 = (width - side) / 2;
+    int y0 = (height - side) / 2;
+
+    glViewport(x0, y0, side, side);
 }
 
 static void key_callback(GLFWwindow *window,
@@ -67,8 +78,11 @@ static void key_callback(GLFWwindow *window,
 }
 
 void gl_loop(Context context) {
+    glfwSetWindowSizeCallback(context.window, size_callback);
     glfwSetKeyCallback(context.window, key_callback);
+
     while (!glfwWindowShouldClose(context.window)) {
+
         glClearColor(0.1, 0.1, 0.1, 1);
         glClear(GL_COLOR_BUFFER_BIT);
 
