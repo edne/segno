@@ -21,7 +21,7 @@ SCM shape_rotate(SCM shape_scm, SCM angle_scm) {
 
     double angle = scm_to_double(angle_scm);
 
-    mat4_rotateZ(original.matrix, angle, out.matrix);
+    mat4_rotateZ(original.matrix, angle * 2*M_PI, out.matrix);
     return scm_from_shape(out);
 }
 
