@@ -95,7 +95,21 @@ SCM polygon_new(SCM n_scm) {
     return scm_from_shape(shape);
 }
 
-void shape_draw(Shape shape, Program program) {
+void shape_draw(SCM shape_scm, Program program) {
+    if (scm_is_pair(shape_scm)) {
+        SCM list = shape_scm;
+        SCM env = scm_interaction_environment();
+
+        while (scm_is_pair(list)) {
+            shape_scm = scm_eval(scm_car(list), env);
+            shape_draw(shape_scm, program);
+            list = scm_cdr(list);
+        }
+        return;
+    }
+
+    Shape shape = scm_to_shape(shape_scm);
+
     glUseProgram(program.id);
 
     // cast to GLfloat array

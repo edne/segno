@@ -82,17 +82,11 @@ void gl_loop(Context context) {
     glfwSetKeyCallback(context.window, key_callback);
 
     while (!glfwWindowShouldClose(context.window)) {
-
         glClearColor(0.1, 0.1, 0.1, 1);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        SCM guile_polygon;
-        Shape *polygon_ref;
-
-        guile_polygon = scm_c_eval_string("(get-root-shape)");
-        polygon_ref = scm_to_pointer(guile_polygon);
-
-        shape_draw(*polygon_ref, context.program);
+        SCM shape_scm = scm_c_eval_string("(get-root-shape)");
+        shape_draw(shape_scm, context.program);
 
         glfwSwapBuffers(context.window);
         glfwPollEvents();

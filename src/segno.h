@@ -41,7 +41,7 @@ Program program_new(const GLchar *vert_shader,
 void program_free(Program program);
 
 
-void shape_draw(Shape shape, Program program);
+void shape_draw(SCM shape, Program program);
 
 void guile_bind_primitives();
 
