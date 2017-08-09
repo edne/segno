@@ -55,7 +55,7 @@ SCM shape_rotate(SCM shape_scm, SCM turns_scm) {
 
     double turns = scm_to_double(turns_scm);
 
-    mat4_rotateZ(original.matrix, turns * 2*M_PI, out.matrix);
+    mat4x4_rotate_Z(out.matrix, original.matrix, turns * 2*M_PI);
     return scm_from_shape(out);
 }
 
@@ -72,9 +72,8 @@ SCM shape_translate(SCM shape_scm, SCM x_scm) {
     out = original = scm_to_shape(shape_scm);
 
     double x = scm_to_double(x_scm);
-    double v[] = {x, 0, 0};
 
-    mat4_translate(original.matrix, v, out.matrix);
+    mat4x4_translate(out.matrix, x, 0, 0);
     return scm_from_shape(out);
 }
 
@@ -91,9 +90,8 @@ SCM shape_scale(SCM shape_scm, SCM ratio_scm) {
     out = original = scm_to_shape(shape_scm);
 
     double ratio = scm_to_double(ratio_scm);
-    double v[] = {ratio, ratio, ratio};
 
-    mat4_scale(original.matrix, v, out.matrix);
+    mat4x4_scale(out.matrix, original.matrix, ratio);
     return scm_from_shape(out);
 }
 
@@ -140,7 +138,7 @@ SCM polygon_new(SCM n_scm) {
     shape.vertex_buffer = vbo_point;
     shape.vertex_array = vao_point;
 
-    mat4_identity(shape.matrix);
+    mat4x4_identity(shape.matrix);
 
     return scm_from_shape(shape);
 }
@@ -163,8 +161,9 @@ void shape_draw(SCM shape_scm, Program program) {
 
     // cast to GLfloat array
     GLfloat matrix[16];
-    for(int i=0; i<16; i++)
-        matrix[i] = shape.matrix[i];
+    for(int i=0; i<4; i++)
+    for(int j=0; j<4; j++)
+        matrix[i*4 + j] = shape.matrix[i][j];
 
     glUniformMatrix4fv(program.uniform_matrix, 1, GL_FALSE, matrix);
 

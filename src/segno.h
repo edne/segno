@@ -6,7 +6,7 @@
 #include <GL/gl3w.h>
 #include <GLFW/glfw3.h>
 #include <libguile.h>
-#include <gl-matrix.h>
+#include <linmath.h>
 
 #define M_PI 3.141592653589793
 
@@ -15,7 +15,7 @@ typedef struct {
     int n;
     GLuint vertex_buffer;
     GLuint vertex_array;
-    double matrix[16];  // NOT mat4_t because I want it on the stack
+    mat4x4 matrix;
 } Shape;
 
 
