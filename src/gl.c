@@ -58,10 +58,11 @@ void gl_clean(Context context) {
 }
 
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
+#define MAX(a, b) (((a) > (b)) ? (a) : (b))
 
 void size_callback(GLFWwindow* window, int width, int height) {
     (void) window;
-    int side = MIN(width, height);
+    int side = MAX(width, height);
     int x0 = (width - side) / 2;
     int y0 = (height - side) / 2;
 
