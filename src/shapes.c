@@ -73,7 +73,7 @@ SCM shape_translate(SCM shape_scm, SCM x_scm) {
 
     double x = scm_to_double(x_scm);
 
-    mat4x4_translate(out.matrix, x, 0, 0);
+    mat4x4_translate_in_place(out.matrix, x, 0, 0);
     return scm_from_shape(out);
 }
 
@@ -91,7 +91,7 @@ SCM shape_scale(SCM shape_scm, SCM ratio_scm) {
 
     double ratio = scm_to_double(ratio_scm);
 
-    mat4x4_scale(out.matrix, original.matrix, ratio);
+    mat4x4_scale_aniso(out.matrix, original.matrix, ratio, ratio, ratio);
     return scm_from_shape(out);
 }
 
