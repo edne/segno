@@ -21,6 +21,11 @@ typedef struct {
 
 
 typedef struct {
+    mat4x4 matrix;
+} Transform;
+
+
+typedef struct {
     GLuint id;
     GLuint uniform_matrix;
 } Program;

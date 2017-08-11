@@ -2,10 +2,10 @@
 
 
 SCM scm_from_shape(Shape shape) {
-    Shape *shape_heap = scm_gc_malloc_pointerless(sizeof(Shape), "shape");
+    Shape *shape_heap;
+    shape_heap = scm_gc_malloc_pointerless(sizeof(Shape), "shape");
 
     memcpy(shape_heap, &shape, sizeof(Shape));
-
     return scm_from_pointer(shape_heap, NULL);
 }
 
@@ -15,84 +15,135 @@ Shape scm_to_shape(SCM shape_scm) {
     return shape;
 }
 
-SCM map_transform(SCM (*transform)(SCM, SCM), SCM in_list, SCM value) {
+SCM scm_from_transform(Transform transform) {
+    Transform *transform_heap;
+    transform_heap = scm_gc_malloc_pointerless(sizeof(Transform), "transform");
+
+    memcpy(transform_heap, &transform, sizeof(Transform));
+    return scm_from_pointer(transform_heap, NULL);
+}
+
+Transform scm_to_transform(SCM transform_scm) {
+    Transform *transform_ref = scm_to_pointer(transform_scm);
+    Transform transform = *transform_ref;
+    return transform;
+}
+
+SCM apply_transform(SCM shape_scm, SCM transform_scm);
+
+SCM map_transform(SCM transform_scm, SCM in_shapes) {
     SCM shape_scm;
-    SCM out_list = SCM_EOL;
+    SCM out_shapes = SCM_EOL;
 
-    while (scm_is_pair(in_list)) {
-        shape_scm = scm_car(in_list);
+    while (scm_is_pair(in_shapes)) {
+        shape_scm = scm_car(in_shapes);
 
-        out_list = scm_cons(transform(shape_scm, value), out_list);
-        in_list = scm_cdr(in_list);
+        out_shapes = scm_cons(apply_transform(shape_scm, transform_scm),
+                              out_shapes);
+        in_shapes = scm_cdr(in_shapes);
     }
-    return out_list;
+    return out_shapes;
 }
 
-SCM fork_transform(SCM (*transform)(SCM, SCM), SCM shape_scm, SCM values) {
-    SCM value;
-    SCM out_list = SCM_EOL;
-
-    while (scm_is_pair(values)) {
-        value = scm_car(values);
-
-        out_list = scm_cons(transform(shape_scm, value), out_list);
-        values = scm_cdr(values);
-    }
-    return out_list;
-}
-
-SCM shape_rotate(SCM shape_scm, SCM turns_scm) {
-    if (scm_is_pair(turns_scm)) {
-        return fork_transform(shape_rotate, shape_scm, turns_scm);
-    }
-
+SCM apply_transform(SCM shape_scm, SCM transform_scm) {
     if (scm_is_pair(shape_scm)) {
-        return map_transform(shape_rotate, shape_scm, turns_scm);
+        return map_transform(transform_scm, shape_scm);
+
+    } else if (scm_is_pair(transform_scm)) {
+        // Build a list of transformed shapes
+        SCM in_transforms = transform_scm;
+        SCM out_shapes = SCM_EOL;
+
+        while (scm_is_pair(in_transforms)) {
+            transform_scm = scm_car(in_transforms);
+            out_shapes = scm_cons(apply_transform(shape_scm, transform_scm),
+                                  out_shapes);
+
+            in_transforms = scm_cdr(in_transforms);
+        }
+
+        return out_shapes;
+    } else {
+        Shape original, out;
+        out = original = scm_to_shape(shape_scm);
+
+        Transform transform = scm_to_transform(transform_scm);
+
+        mat4x4_mul(out.matrix, transform.matrix, original.matrix);
+        return scm_from_shape(out);
     }
-
-    Shape original, out;
-    out = original = scm_to_shape(shape_scm);
-
-    double turns = scm_to_double(turns_scm);
-
-    mat4x4_rotate_Z(out.matrix, original.matrix, turns * 2*M_PI);
-    return scm_from_shape(out);
 }
 
-SCM shape_translate(SCM shape_scm, SCM x_scm) {
-    if (scm_is_pair(x_scm)) {
-        return fork_transform(shape_translate, shape_scm, x_scm);
+SCM fork_transform(SCM (*make_transform)(SCM), SCM values_scm) {
+    // Build a list of transformations
+    SCM out_transforms = SCM_EOL;
+
+    while (scm_is_pair(values_scm)) {
+        SCM value_scm = scm_car(values_scm);
+        out_transforms = scm_cons(make_transform(value_scm), out_transforms);
+
+        values_scm = scm_cdr(values_scm);
     }
-
-    if (scm_is_pair(shape_scm)) {
-        return map_transform(shape_translate, shape_scm, x_scm);
-    }
-
-    Shape original, out;
-    out = original = scm_to_shape(shape_scm);
-
-    double x = scm_to_double(x_scm);
-
-    mat4x4_translate_in_place(out.matrix, x, 0, 0);
-    return scm_from_shape(out);
+    return out_transforms;
 }
 
-SCM shape_scale(SCM shape_scm, SCM ratio_scm) {
-    if (scm_is_pair(ratio_scm)) {
-        return fork_transform(shape_scale, shape_scm, ratio_scm);
+SCM make_rotation(SCM values) {
+    if (scm_is_pair(values)) {
+        return fork_transform(make_rotation, values);
+
+    } else {
+        double turns = scm_to_double(values);
+
+        Transform transform;
+        mat4x4 identity;
+        mat4x4_identity(identity);
+        mat4x4_rotate_Z(transform.matrix, identity, turns * 2*M_PI);
+        return scm_from_transform(transform);
     }
+}
 
-    if (scm_is_pair(shape_scm)) {
-        return map_transform(shape_scale, shape_scm, ratio_scm);
+SCM make_tranlsation(SCM values) {
+    if (scm_is_pair(values)) {
+        return fork_transform(make_tranlsation, values);
+
+    } else {
+        double x = scm_to_double(values);
+
+        Transform transform;
+        mat4x4_translate(transform.matrix, x, 0, 0);
+        return scm_from_transform(transform);
     }
+}
 
-    Shape original, out;
-    out = original = scm_to_shape(shape_scm);
+SCM make_scaling(SCM values) {
+    if (scm_is_pair(values)) {
+        return fork_transform(make_scaling, values);
 
-    double ratio = scm_to_double(ratio_scm);
+    } else {
+        double ratio = scm_to_double(values);
 
-    mat4x4_scale_aniso(out.matrix, original.matrix, ratio, ratio, ratio);
-    return scm_from_shape(out);
+        Transform transform;
+        mat4x4 identity;
+        mat4x4_identity(identity);
+        mat4x4_scale_aniso(transform.matrix, identity, ratio, ratio, ratio);
+        return scm_from_transform(transform);
+    }
+}
+
+
+SCM shape_rotate(SCM shape_scm, SCM values) {
+    SCM transform_scm = make_rotation(values);
+    return apply_transform(shape_scm, transform_scm);
+}
+
+SCM shape_translate(SCM shape_scm, SCM values) {
+    SCM transform_scm = make_tranlsation(values);
+    return apply_transform(shape_scm, transform_scm);
+}
+
+SCM shape_scale(SCM shape_scm, SCM values) {
+    SCM transform_scm = make_scaling(values);
+    return apply_transform(shape_scm, transform_scm);
 }
 
 SCM polygon_new(SCM n_scm) {
