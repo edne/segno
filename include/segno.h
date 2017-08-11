@@ -12,6 +12,17 @@
 #define M_PI 3.141592653589793
 
 
+#define is_pair scm_is_pair
+#define first   scm_car
+#define rest    scm_cdr
+#define cons    scm_cons
+
+#define foreach(x, xs) \
+    for(; \
+        x = is_pair(xs) ? first(xs) : SCM_UNDEFINED, is_pair(xs); \
+        xs = rest(xs))
+
+
 typedef struct {
     int n;
     GLuint vertex_buffer;

@@ -29,60 +29,53 @@ Transform scm_to_transform(SCM transform_scm) {
     return transform;
 }
 
-SCM apply_transform(SCM shape_scm, SCM transform_scm);
+SCM apply_transform(SCM shape, SCM transform);
 
-SCM map_transform(SCM transform_scm, SCM in_shapes) {
-    SCM shape_scm;
+SCM map_transform(SCM transform, SCM in_shapes) {
+    SCM shape;
     SCM out_shapes = SCM_EOL;
 
-    while (scm_is_pair(in_shapes)) {
-        shape_scm = scm_car(in_shapes);
-
-        out_shapes = scm_cons(apply_transform(shape_scm, transform_scm),
+    foreach(shape, in_shapes) {
+        out_shapes = scm_cons(apply_transform(shape, transform),
                               out_shapes);
-        in_shapes = scm_cdr(in_shapes);
     }
     return out_shapes;
 }
 
-SCM apply_transform(SCM shape_scm, SCM transform_scm) {
-    if (scm_is_pair(shape_scm)) {
-        return map_transform(transform_scm, shape_scm);
+SCM apply_transform(SCM shape, SCM transform) {
+    if (scm_is_pair(shape)) {
+        return map_transform(transform, shape);
 
-    } else if (scm_is_pair(transform_scm)) {
+    } else if (scm_is_pair(transform)) {
         // Build a list of transformed shapes
-        SCM in_transforms = transform_scm;
+        SCM in_transforms = transform;
         SCM out_shapes = SCM_EOL;
 
-        while (scm_is_pair(in_transforms)) {
-            transform_scm = scm_car(in_transforms);
-            out_shapes = scm_cons(apply_transform(shape_scm, transform_scm),
+        foreach(transform, in_transforms) {
+            out_shapes = scm_cons(apply_transform(shape, transform),
                                   out_shapes);
-
-            in_transforms = scm_cdr(in_transforms);
         }
 
         return out_shapes;
+
     } else {
         Shape original, out;
-        out = original = scm_to_shape(shape_scm);
+        out = original = scm_to_shape(shape);
 
-        Transform transform = scm_to_transform(transform_scm);
+        Transform transform_unpacked = scm_to_transform(transform);
 
-        mat4x4_mul(out.matrix, transform.matrix, original.matrix);
+        mat4x4_mul(out.matrix, transform_unpacked.matrix, original.matrix);
         return scm_from_shape(out);
     }
 }
 
-SCM fork_transform(SCM (*make_transform)(SCM), SCM values_scm) {
+SCM fork_transform(SCM (*make_transform)(SCM), SCM values) {
     // Build a list of transformations
     SCM out_transforms = SCM_EOL;
 
-    while (scm_is_pair(values_scm)) {
-        SCM value_scm = scm_car(values_scm);
-        out_transforms = scm_cons(make_transform(value_scm), out_transforms);
-
-        values_scm = scm_cdr(values_scm);
+    SCM value;
+    foreach(value, values) {
+        out_transforms = cons(make_transform(value), out_transforms);
     }
     return out_transforms;
 }
@@ -131,19 +124,19 @@ SCM make_scaling(SCM values) {
 }
 
 
-SCM shape_rotate(SCM shape_scm, SCM values) {
-    SCM transform_scm = make_rotation(values);
-    return apply_transform(shape_scm, transform_scm);
+SCM shape_rotate(SCM shape, SCM values) {
+    SCM transform = make_rotation(values);
+    return apply_transform(shape, transform);
 }
 
-SCM shape_translate(SCM shape_scm, SCM values) {
-    SCM transform_scm = make_tranlsation(values);
-    return apply_transform(shape_scm, transform_scm);
+SCM shape_translate(SCM shape, SCM values) {
+    SCM transform = make_tranlsation(values);
+    return apply_transform(shape, transform);
 }
 
-SCM shape_scale(SCM shape_scm, SCM values) {
-    SCM transform_scm = make_scaling(values);
-    return apply_transform(shape_scm, transform_scm);
+SCM shape_scale(SCM shape, SCM values) {
+    SCM transform = make_scaling(values);
+    return apply_transform(shape, transform);
 }
 
 SCM polygon_new(SCM n_scm) {
@@ -198,11 +191,13 @@ void shape_draw(SCM shape_scm, Program program) {
     if (scm_is_pair(shape_scm)) {
         SCM list = shape_scm;
 
-        while (scm_is_pair(list)) {
-            shape_scm = scm_car(list);
+        SCM shape_scm;
+        foreach(shape_scm, list)
+        {
+            shape_scm = first(list);
             shape_draw(shape_scm, program);
-            list = scm_cdr(list);
         }
+
         return;
     }
 
