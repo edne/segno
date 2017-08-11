@@ -1,5 +1,6 @@
 (use-modules (ice-9 threads))
 (use-modules (ice-9 match))
+(use-modules (srfi srfi-1))  ; to use iota for ranges
 
 (defmacro ~> (head . body)
   (match body
