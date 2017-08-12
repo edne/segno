@@ -120,7 +120,7 @@ SCM transform_combine(SCM transforms) {
 
 SCM shape_change(SCM shape, SCM transform) {
     // for now just one transformation
-    return apply_transform(shape, transform);
+    return apply_transform(shape, transform_combine(transform));
 }
 
 SCM fork_transform(SCM (*make_transform)(SCM), SCM values) {
@@ -262,10 +262,10 @@ void shape_draw(SCM shape_scm, Program program) {
 void guile_bind_primitives() {
     scm_c_define_gsubr("polygon",   1, 0, 0, &polygon_new);
 
-    scm_c_define_gsubr("scale",     1, 0, 0, &transform_scale);
-    scm_c_define_gsubr("translate", 1, 0, 0, &transform_translate);
-    scm_c_define_gsubr("rotate",    1, 0, 0, &transform_rotate);
+    scm_c_define_gsubr("scale",     0, 0, 1, &transform_scale);
+    scm_c_define_gsubr("translate", 0, 0, 1, &transform_translate);
+    scm_c_define_gsubr("rotate",    0, 0, 1, &transform_rotate);
 
-    scm_c_define_gsubr("change",    2, 0, 0, &shape_change);
+    scm_c_define_gsubr("change",    1, 0, 1, &shape_change);
     scm_c_define_gsubr("combine",   0, 0, 1, &transform_combine);
 }

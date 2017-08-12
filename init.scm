@@ -21,7 +21,11 @@
 
 (define (get-root-shape) (with-mutex mutex root-shape))
 
-(define (draw shape)     (with-mutex mutex (set! root-shape shape)))
+(define (draw . shapes)  (with-mutex mutex (set! root-shape shapes)))
 
+(define (group . rest)   (apply list rest))
+
+; Esoteric ASCII version
 (define >_               draw)
-(define (@ . rest)       (apply list rest))
+(define (@  . rest)      (apply list rest))
+(define (>> . rest)      (apply change rest))
