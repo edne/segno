@@ -15,17 +15,21 @@
          ))
 
 
-(define root-shape (polygon 6))
+(define root-shape (polygon 4))
 (define mutex      (make-mutex))
+
+
+(define (nth n)  (map (lambda (x) (/ x n))
+                      (iota n)))
 
 
 (define (get-root-shape) (with-mutex mutex root-shape))
 
 (define (draw . shapes)  (with-mutex mutex (set! root-shape shapes)))
 
-(define (group . rest)   (apply list rest))
+(define group list)
 
 ; Esoteric ASCII version
-(define >_               draw)
-(define (@  . rest)      (apply list rest))
-(define (>> . rest)      (apply change rest))
+(define >_    draw)
+(define @     group)
+(define >>    change)
