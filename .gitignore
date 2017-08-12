@@ -1,4 +1,5 @@
 segno
 *.o
+*.d
 
 *.swp
