@@ -48,18 +48,43 @@ typedef struct {
 } Context;
 
 
+// gl.c
 Context gl_init();
 void gl_loop(Context context);
 void gl_clean(Context context);
 
 
+// shaders.c
 Program program_new(const GLchar *vert_shader,
                     const GLchar *frag_shader);
 void program_free(Program program);
 
 
-void shape_draw(SCM shape, Program program);
+// shapes.c
+SCM scm_from_shape(Shape shape);
+Shape scm_to_shape(SCM shape_scm);
 
+SCM shape_change(SCM shape, SCM transform);
+SCM polygon_new(SCM n_scm);
+
+void shape_draw(SCM shape, Program program);
 void guile_bind_primitives();
 
+
+// transformations.c
+SCM transform_apply(SCM shape, SCM transform);
+
+SCM scm_from_transform(Transform transform);
+Transform scm_to_transform(SCM transform_scm);
+
+SCM transform_map(SCM transform, SCM in_shapes);
+SCM transform_apply(SCM shape, SCM transform);
+SCM transform_combine(SCM transforms);
+
+SCM transform_rotate(SCM values);
+SCM transform_translate(SCM values);
+SCM transform_scale(SCM values);
+
+
+// global variables (TODO: do not use them)
 GLFWwindow *global_window;

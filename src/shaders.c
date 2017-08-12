@@ -32,7 +32,6 @@ GLuint link_program(GLuint vert, GLuint frag) {
     return program;
 }
 
-
 Program program_new(const GLchar *vert_shader, const GLchar *frag_shader) {
     Program program;
 
