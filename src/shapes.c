@@ -69,6 +69,60 @@ SCM apply_transform(SCM shape, SCM transform) {
     }
 }
 
+SCM transform_combine_two(SCM target, SCM source) {
+    if (scm_is_pair(target)) {
+        SCM out = SCM_EOL;
+
+        SCM transform;
+        foreach(transform, target) {
+            out = scm_cons(transform_combine_two(transform, source),
+                           out);
+        }
+        return out;
+    }
+
+    if (scm_is_pair(source)) {
+        SCM out = SCM_EOL;
+
+        SCM transform;
+        foreach(transform, source) {
+            out = scm_cons(transform_combine_two(target, transform),
+                           out);
+        }
+        return out;
+    }
+
+    Transform source_unpacked, target_unpacked;
+
+    source_unpacked = scm_to_transform(source);
+    target_unpacked = scm_to_transform(target);
+
+    mat4x4_mul(target_unpacked.matrix,
+               source_unpacked.matrix,
+               target_unpacked.matrix);
+
+    return scm_from_transform(target_unpacked);
+}
+
+SCM transform_combine(SCM transforms) {
+    SCM source, target;
+
+    Transform identity;
+    mat4x4_identity(identity.matrix);
+    target = scm_from_transform(identity);
+
+    foreach(source, transforms) {
+        target = transform_combine_two(target, source);
+    }
+
+    return target;
+}
+
+SCM shape_change(SCM shape, SCM transform) {
+    // for now just one transformation
+    return apply_transform(shape, transform);
+}
+
 SCM fork_transform(SCM (*make_transform)(SCM), SCM values) {
     // Build a list of transformations
     SCM out_transforms = SCM_EOL;
@@ -80,9 +134,9 @@ SCM fork_transform(SCM (*make_transform)(SCM), SCM values) {
     return out_transforms;
 }
 
-SCM make_rotation(SCM values) {
+SCM transform_rotate(SCM values) {
     if (scm_is_pair(values)) {
-        return fork_transform(make_rotation, values);
+        return fork_transform(transform_rotate, values);
 
     } else {
         double turns = scm_to_double(values);
@@ -95,9 +149,9 @@ SCM make_rotation(SCM values) {
     }
 }
 
-SCM make_tranlsation(SCM values) {
+SCM transform_translate(SCM values) {
     if (scm_is_pair(values)) {
-        return fork_transform(make_tranlsation, values);
+        return fork_transform(transform_translate, values);
 
     } else {
         double x = scm_to_double(values);
@@ -108,9 +162,9 @@ SCM make_tranlsation(SCM values) {
     }
 }
 
-SCM make_scaling(SCM values) {
+SCM transform_scale(SCM values) {
     if (scm_is_pair(values)) {
-        return fork_transform(make_scaling, values);
+        return fork_transform(transform_scale, values);
 
     } else {
         double ratio = scm_to_double(values);
@@ -121,22 +175,6 @@ SCM make_scaling(SCM values) {
         mat4x4_scale_aniso(transform.matrix, identity, ratio, ratio, ratio);
         return scm_from_transform(transform);
     }
-}
-
-
-SCM shape_rotate(SCM shape, SCM values) {
-    SCM transform = make_rotation(values);
-    return apply_transform(shape, transform);
-}
-
-SCM shape_translate(SCM shape, SCM values) {
-    SCM transform = make_tranlsation(values);
-    return apply_transform(shape, transform);
-}
-
-SCM shape_scale(SCM shape, SCM values) {
-    SCM transform = make_scaling(values);
-    return apply_transform(shape, transform);
 }
 
 SCM polygon_new(SCM n_scm) {
@@ -223,7 +261,11 @@ void shape_draw(SCM shape_scm, Program program) {
 
 void guile_bind_primitives() {
     scm_c_define_gsubr("polygon",   1, 0, 0, &polygon_new);
-    scm_c_define_gsubr("scale",     2, 0, 0, &shape_scale);
-    scm_c_define_gsubr("rotate",    2, 0, 0, &shape_rotate);
-    scm_c_define_gsubr("translate", 2, 0, 0, &shape_translate);
+
+    scm_c_define_gsubr("scale",     1, 0, 0, &transform_scale);
+    scm_c_define_gsubr("translate", 1, 0, 0, &transform_translate);
+    scm_c_define_gsubr("rotate",    1, 0, 0, &transform_rotate);
+
+    scm_c_define_gsubr("change",    2, 0, 0, &shape_change);
+    scm_c_define_gsubr("combine",   0, 0, 1, &transform_combine);
 }
