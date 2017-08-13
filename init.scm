@@ -15,7 +15,7 @@
          ))
 
 
-(define root-shape (polygon 4))
+(define root-shape '(polygon 4))
 (define mutex      (make-mutex))
 
 
@@ -23,13 +23,9 @@
                       (iota n)))
 
 
-(define (get-root-shape) (with-mutex mutex root-shape))
+(define (get-root-shape) (with-mutex mutex (eval root-shape
+                                                 (interaction-environment))))
 
-(define (draw . shapes)  (with-mutex mutex (set! root-shape shapes)))
+(define-macro (draw body) (with-mutex mutex (set! root-shape body)) #t)
 
 (define group list)
-
-; Esoteric ASCII version
-(define >_    draw)
-(define @     group)
-(define >>    change)
