@@ -20,7 +20,7 @@ SCM shape_change(SCM shape, SCM transform) {
     return transform_apply(shape, transform_combine(transform));
 }
 
-SCM polygon_new(SCM n_scm) {
+SCM shape_polygon(SCM n_scm) {
     int n = scm_to_int(n_scm);
     // Points
     float array[2*n];
