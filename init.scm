@@ -1,6 +1,7 @@
 (use-modules (ice-9 threads))
 (use-modules (ice-9 match))
 (use-modules (srfi srfi-1))  ; to use iota for ranges
+(use-modules (ice-9 poe))
 
 (defmacro ~> (head . body)
   (match body
@@ -27,5 +28,8 @@
                                                  (interaction-environment))))
 
 (define-macro (draw body) (with-mutex mutex (set! root-shape body)) #t)
+
+; Save the outputs of polygon in a table of roughly 24 elements
+(define polygon (perfect-funcq 24 polygon))
 
 (define group list)
