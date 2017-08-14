@@ -82,7 +82,8 @@ SCM transform_apply(SCM shape, SCM transform);
 SCM transform_combine(SCM transforms);
 
 SCM transform_rotate(SCM values);
-SCM transform_translate(SCM values);
+SCM transform_translate_x(SCM values);
+SCM transform_translate_y(SCM values);
 SCM transform_scale(SCM values);
 
 

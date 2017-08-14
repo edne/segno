@@ -128,9 +128,9 @@ SCM transform_rotate(SCM values) {
     }
 }
 
-SCM transform_translate(SCM values) {
+SCM transform_translate_x(SCM values) {
     if (scm_is_pair(values)) {
-        return transform_fork(transform_translate, values);
+        return transform_fork(transform_translate_x, values);
 
     } else {
         double x = scm_to_double(values);
@@ -140,6 +140,21 @@ SCM transform_translate(SCM values) {
         return scm_from_transform(transform);
     }
 }
+
+
+SCM transform_translate_y(SCM values) {
+    if (scm_is_pair(values)) {
+        return transform_fork(transform_translate_y, values);
+
+    } else {
+        double y = scm_to_double(values);
+
+        Transform transform;
+        mat4x4_translate(transform.matrix, 0, y, 0);
+        return scm_from_transform(transform);
+    }
+}
+
 
 SCM transform_scale(SCM values) {
     if (scm_is_pair(values)) {
