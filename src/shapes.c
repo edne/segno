@@ -15,7 +15,7 @@ Shape scm_to_shape(SCM shape_scm) {
     return shape;
 }
 
-SCM shape_change(SCM shape, SCM transform) {
+SCM shape_transform(SCM shape, SCM transform) {
     // for now just one transformation
     return transform_apply(shape, transform_combine(transform));
 }

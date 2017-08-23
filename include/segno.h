@@ -64,7 +64,7 @@ void program_free(Program program);
 SCM scm_from_shape(Shape shape);
 Shape scm_to_shape(SCM shape_scm);
 
-SCM shape_change(SCM shape, SCM transform);
+SCM shape_transform(SCM shape, SCM transform);
 SCM shape_polygon(SCM n_scm);
 
 void shape_draw(SCM shape, Program program);

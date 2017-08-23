@@ -1,11 +1,25 @@
-(draw (group (change (polygon 6)
-                     (rotate 1/4)
-                     (scale 1/9))
-             (change (polygon 6)
-                     (scale     1/2)
-                     (translate-x 1)
-                     (rotate    1/4)
-                     (rotate    0 1/3 2/3)
-                     (group (combine (rotate 1)   (scale 1))
-                            (combine (rotate 1/2) (scale 2/3)))
-                     (scale 1/2))))
+(define >~ transform)
+(define &  group)
+(define >+ combine)
+;(define >. attribute)
+
+(define move-x translate-x)
+(define move-y translate-y)
+
+
+(draw (>~ (polygon 6)
+
+           (& (scale 1/12
+                     2/3)
+
+              (>+ (scale 1/9)
+                  (move-y 1/9)
+                  (move-y 1/3)
+                  (rotate (nth 3)))
+
+              (>+ (scale  1/6)
+                  (move-y 1/3)
+                  (rotate (nth 3))
+                  (rotate 1/2)))
+
+           (rotate 1/2)))
