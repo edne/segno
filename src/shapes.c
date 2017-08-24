@@ -65,6 +65,15 @@ SCM shape_polygon(SCM n_scm) {
 
     mat4x4_identity(shape.matrix);
 
+    shape.fill = false;
+
+    return scm_from_shape(shape);
+}
+
+SCM shape_fill(SCM shape_scm, SCM fill_scm) {
+    Shape shape = scm_to_shape(shape_scm);
+    shape.fill = scm_to_bool(fill_scm);
+
     return scm_from_shape(shape);
 }
 
@@ -95,8 +104,11 @@ void shape_draw(SCM shape_scm, Program program) {
     glUniformMatrix4fv(program.uniform_matrix, 1, GL_FALSE, matrix);
 
     glBindVertexArray(shape.vertex_array);
-    glDrawArrays(GL_LINE_LOOP, 0, shape.n);
-    //glDrawArrays(GL_TRIANGLE_FAN, 0, shape.n);
+
+    if (shape.fill)
+        glDrawArrays(GL_TRIANGLE_FAN, 0, shape.n);
+    else
+        glDrawArrays(GL_LINE_LOOP, 0, shape.n);
 
     glBindVertexArray(0);
     glUseProgram(0);

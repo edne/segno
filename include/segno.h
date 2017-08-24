@@ -1,6 +1,7 @@
 #pragma once
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <math.h>
 #include <pthread.h>
 
@@ -28,6 +29,8 @@ typedef struct {
     GLuint vertex_buffer;
     GLuint vertex_array;
     mat4x4 matrix;
+
+    bool fill;
 } Shape;
 
 
@@ -66,6 +69,7 @@ Shape scm_to_shape(SCM shape_scm);
 
 SCM shape_transform(SCM shape, SCM transform);
 SCM shape_polygon(SCM n_scm);
+SCM shape_fill(SCM shape_scm, SCM fill_scm);
 
 void shape_draw(SCM shape, Program program);
 void guile_bind_primitives();

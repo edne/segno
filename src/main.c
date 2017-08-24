@@ -19,6 +19,8 @@ void guile_bind_primitives() {
     scm_c_define_gsubr("translate-y", 0, 0, 1, &transform_translate_y);
     scm_c_define_gsubr("rotate",      0, 0, 1, &transform_rotate);
 
+    scm_c_define_gsubr("fill",        0, 2, 0, &shape_fill);
+
     scm_c_define_gsubr("transform",   1, 0, 1, &shape_transform);
     scm_c_define_gsubr("combine",     0, 0, 1, &transform_combine);
 }
