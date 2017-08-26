@@ -23,7 +23,7 @@
                  (rotate (nth 6)))
              (scale 3/2))
 
-         (>~ (fill (polygon 6))
+         (>~ (polygon 6 fill)
 
              (& (scale 1/3 1/12)
 

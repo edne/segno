@@ -68,8 +68,8 @@ SCM scm_from_shape(Shape shape);
 Shape scm_to_shape(SCM shape_scm);
 
 SCM shape_transform(SCM shape, SCM transform);
-SCM shape_polygon(SCM n_scm);
-SCM shape_fill(SCM shape_scm, SCM fill_scm);
+SCM shape_polygon(SCM n_scm, SCM changes);
+SCM shape_fill(SCM shape_scm);
 
 void shape_draw(SCM shape, Program program);
 void guile_bind_primitives();

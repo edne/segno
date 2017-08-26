@@ -20,7 +20,7 @@ SCM shape_transform(SCM shape, SCM transform) {
     return transform_apply(shape, transform_combine(transform));
 }
 
-SCM shape_polygon(SCM n_scm) {
+SCM shape_polygon(SCM n_scm, SCM changes) {
     int n = scm_to_int(n_scm);
     // Points
     float array[2*n];
@@ -67,12 +67,19 @@ SCM shape_polygon(SCM n_scm) {
 
     shape.fill = false;
 
-    return scm_from_shape(shape);
+    SCM shape_scm = scm_from_shape(shape);
+    SCM change;
+
+    foreach(change, changes) {
+        shape_scm = scm_apply_1(change, shape_scm, SCM_EOL);
+    }
+
+    return shape_scm;
 }
 
-SCM shape_fill(SCM shape_scm, SCM fill_scm) {
+SCM shape_fill(SCM shape_scm) {
     Shape shape = scm_to_shape(shape_scm);
-    shape.fill = scm_to_bool(fill_scm);
+    shape.fill = true;
 
     return scm_from_shape(shape);
 }
@@ -82,8 +89,7 @@ void shape_draw(SCM shape_scm, Program program) {
         SCM list = shape_scm;
 
         SCM shape_scm;
-        foreach(shape_scm, list)
-        {
+        foreach(shape_scm, list) {
             shape_scm = first(list);
             shape_draw(shape_scm, program);
         }
